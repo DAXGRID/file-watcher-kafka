@@ -52,7 +52,7 @@ namespace FileWatcherKafka
         {
             if (e.ChangeType != WatcherChangeTypes.Changed)
                 return;
-            _logger.LogInformation($"Changed: {e.FullPath}");
+            _logger.LogInformation($"Changed: {e.FullPath}, publishing to Kafka.");
             await _producer.Send(_kafkaSetting.Topic, new ToposMessage(new FileChangedEvent(e.FullPath)));
         }
 
