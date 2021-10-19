@@ -45,15 +45,12 @@ namespace FileWatcherKafka
             if (e.ChangeType != WatcherChangeTypes.Changed)
                 return;
 
-            _logger.LogInformation($"Changed: {e.FullPath}, publishing to Kafka.");
-
-            var sha256 = SHA256CheckSum(e.FullPath);
-            if (string.IsNullOrEmpty(sha256))
+            var sha256CheckSum = SHA256CheckSum(e.FullPath);
+            if (string.IsNullOrEmpty(sha256CheckSum))
                 throw new Exception($"File '{e.FullPath}' SHA256Checksum cannot be null or empty.");
 
-            _logger.LogInformation($"File SHA256: {sha256}");
-
-            await _producer.Send(_kafkaSetting.Topic, new ToposMessage(new FileChangedEvent(e.FullPath, sha256)));
+            _logger.LogInformation($"Changed: {e.FullPath}, publishing to Kafka with SHA256CheckSum {sha256CheckSum}.");
+            await _producer.Send(_kafkaSetting.Topic, new ToposMessage(new FileChangedEvent(e.FullPath, sha256CheckSum)));
         }
 
         private void OnError(object sender, ErrorEventArgs e) =>
