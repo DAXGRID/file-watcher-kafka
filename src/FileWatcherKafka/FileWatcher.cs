@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -28,15 +29,6 @@ namespace FileWatcherKafka
 
         public void Start()
         {
-            _watcher.NotifyFilter = NotifyFilters.Attributes
-                | NotifyFilters.CreationTime
-                | NotifyFilters.DirectoryName
-                | NotifyFilters.FileName
-                | NotifyFilters.LastAccess
-                | NotifyFilters.LastWrite
-                | NotifyFilters.Security
-                | NotifyFilters.Size;
-
             _watcher.Changed += async (s, e) => await OnChanged(s, e);
             _watcher.Error += OnError;
             _watcher.EnableRaisingEvents = true;
@@ -52,8 +44,16 @@ namespace FileWatcherKafka
         {
             if (e.ChangeType != WatcherChangeTypes.Changed)
                 return;
+
             _logger.LogInformation($"Changed: {e.FullPath}, publishing to Kafka.");
-            await _producer.Send(_kafkaSetting.Topic, new ToposMessage(new FileChangedEvent(e.FullPath)));
+
+            var sha256 = SHA256CheckSum(e.FullPath);
+            if (string.IsNullOrEmpty(sha256))
+                throw new Exception($"File '{e.FullPath}' SHA256Checksum cannot be null or empty.");
+
+            _logger.LogInformation($"File SHA256: {sha256}");
+
+            await _producer.Send(_kafkaSetting.Topic, new ToposMessage(new FileChangedEvent(e.FullPath, sha256)));
         }
 
         private void OnError(object sender, ErrorEventArgs e) =>
@@ -63,6 +63,15 @@ namespace FileWatcherKafka
         {
             if (ex is not null)
                 _logger.LogError($"Message: {ex.Message}, exception {ex.StackTrace}");
+        }
+
+        private string SHA256CheckSum(string filePath)
+        {
+            using (var SHA256 = SHA256Managed.Create())
+            {
+                using (FileStream fileStream = File.OpenRead(filePath))
+                    return Convert.ToBase64String(SHA256.ComputeHash(fileStream));
+            }
         }
     }
 }
