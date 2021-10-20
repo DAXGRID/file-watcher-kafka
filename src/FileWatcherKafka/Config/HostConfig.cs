@@ -51,6 +51,7 @@ namespace FileWatcherKafka.Config
                 services.AddOptions();
                 services.AddHostedService<FileWatcherKafkaHost>();
                 services.Configure<KafkaSetting>(s => hostContext.Configuration.GetSection("kafka").Bind(s));
+                services.Configure<WatchSetting>(s => hostContext.Configuration.GetSection("watch").Bind(s));
                 services.AddTransient<IFileWatcher, FileWatcher>();
             });
         }

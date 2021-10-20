@@ -12,15 +12,30 @@ namespace FileWatcherKafka
     public class FileWatcher : IFileWatcher, IDisposable
     {
         private readonly ILogger<FileWatcher> _logger;
-        private FileSystemWatcher _watcher;
-        private KafkaSetting _kafkaSetting;
-        private IToposProducer _producer;
+        private readonly FileSystemWatcher _watcher;
+        private readonly KafkaSetting _kafkaSetting;
+        private readonly IToposProducer _producer;
+        private readonly WatchSetting _watchSetting;
 
-        public FileWatcher(ILogger<FileWatcher> logger, IOptions<KafkaSetting> kafkaSetting)
+        public FileWatcher(
+            ILogger<FileWatcher> logger,
+            IOptions<KafkaSetting> kafkaSetting,
+            IOptions<WatchSetting> watchSetting)
         {
             _logger = logger;
-            _watcher = new FileSystemWatcher("/home/notation/test");
             _kafkaSetting = kafkaSetting.Value;
+            _watchSetting = watchSetting.Value;
+
+            if (string.IsNullOrWhiteSpace(_watchSetting.Directory))
+                throw new ArgumentException($"{nameof(_watchSetting.Directory)} cannot be null, empty or whitespace.");
+
+            if (string.IsNullOrWhiteSpace(_kafkaSetting.Server) ||
+                string.IsNullOrWhiteSpace(_kafkaSetting.Consumer) ||
+                string.IsNullOrWhiteSpace(_kafkaSetting.Topic))
+                throw new ArgumentException($"All values in {nameof(kafkaSetting)} must not be null, empty or whitespace");
+
+            _watcher = new FileSystemWatcher(_watchSetting.Directory);
+
             _producer = Configure
                 .Producer(c => c.UseKafka(_kafkaSetting.Server))
                 .Serialization(s => s.UseNewtonsoftJson())
