@@ -65,7 +65,14 @@ namespace FileWatcherKafka
                 throw new Exception($"File '{e.FullPath}' SHA256Checksum cannot be null or empty.");
 
             _logger.LogInformation($"Changed: {e.FullPath}, publishing to Kafka with SHA256CheckSum {sha256CheckSum}.");
-            await _producer.Send(_kafkaSetting.Topic, new ToposMessage(new FileChangedEvent(e.FullPath, sha256CheckSum)));
+
+            if (string.IsNullOrWhiteSpace(_watchSetting.Directory))
+                throw new ArgumentException($"{nameof(_watchSetting.Directory)} cannot be null, empty or whitespace.");
+
+            // We replace it here so only from the current path from fileserver.
+            var fullPath = e.FullPath.Replace(_watchSetting.Directory, "");
+
+            await _producer.Send(_kafkaSetting.Topic, new ToposMessage(new FileChangedEvent(fullPath, sha256CheckSum)));
         }
 
         private void OnError(object sender, ErrorEventArgs e) =>
