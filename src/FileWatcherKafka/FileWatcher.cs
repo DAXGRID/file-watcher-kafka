@@ -44,7 +44,7 @@ namespace FileWatcherKafka
 
         public void Start()
         {
-            _watcher.Changed += async (s, e) => await OnChanged(s, e);
+            _watcher.Changed += OnChanged;
             _watcher.Error += OnError;
             _watcher.EnableRaisingEvents = true;
         }
@@ -55,7 +55,7 @@ namespace FileWatcherKafka
             _producer.Dispose();
         }
 
-        private async Task OnChanged(object sender, FileSystemEventArgs e)
+        private void OnChanged(object sender, FileSystemEventArgs e)
         {
             if (e.ChangeType != WatcherChangeTypes.Changed)
                 return;
@@ -72,7 +72,7 @@ namespace FileWatcherKafka
             // We replace it here so only from the current path from fileserver.
             var fullPath = e.FullPath.Replace(_watchSetting.Directory, "");
 
-            await _producer.Send(_kafkaSetting.Topic, new ToposMessage(new FileChangedEvent(fullPath, sha256CheckSum)));
+            _producer.Send(_kafkaSetting.Topic, new ToposMessage(new FileChangedEvent(fullPath, sha256CheckSum))).Wait();
         }
 
         private void OnError(object sender, ErrorEventArgs e) =>
