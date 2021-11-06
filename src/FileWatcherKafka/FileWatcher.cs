@@ -1,7 +1,8 @@
 using System;
 using System.IO;
+using System.Reactive;
+using System.Reactive.Linq;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Topos.Config;
@@ -42,21 +43,27 @@ namespace FileWatcherKafka
                 .Create();
         }
 
-        public void Start()
-        {
-            _watcher.Changed += OnChanged;
-            _watcher.Error += OnError;
-            _watcher.EnableRaisingEvents = true;
-        }
-
         public void Dispose()
         {
             _watcher.Dispose();
             _producer.Dispose();
         }
 
-        private void OnChanged(object sender, FileSystemEventArgs e)
+        public void Start()
         {
+            _watcher.Error += OnError;
+            Observable.FromEventPattern<FileSystemEventArgs>(_watcher, "Changed")
+                        .Throttle(new TimeSpan(TimeSpan.TicksPerSecond))
+                        .Subscribe(OnChanged);
+            _watcher.EnableRaisingEvents = true;
+        }
+
+        private void OnChanged(EventPattern<FileSystemEventArgs> obj)
+        {
+            var (sender, e) = obj;
+            if (e == null)
+                return;
+
             if (e.ChangeType != WatcherChangeTypes.Changed)
                 return;
 
