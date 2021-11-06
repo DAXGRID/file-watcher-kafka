@@ -53,7 +53,7 @@ namespace FileWatcherKafka
         {
             _watcher.Error += OnError;
             Observable.FromEventPattern<FileSystemEventArgs>(_watcher, "Changed")
-                        .Throttle(new TimeSpan(2500000))
+                        .Throttle(new TimeSpan(TimeSpan.TicksPerSecond))
                         .Subscribe(OnChanged);
             _watcher.EnableRaisingEvents = true;
         }
