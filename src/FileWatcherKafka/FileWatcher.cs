@@ -51,10 +51,12 @@ namespace FileWatcherKafka
 
         public void Start()
         {
+            _watcher.NotifyFilter = NotifyFilters.LastWrite;
             _watcher.Error += OnError;
+            // We have to throttle to avoid issues with duplicate messages because the .NET watcher is bad.
             Observable.FromEventPattern<FileSystemEventArgs>(_watcher, "Changed")
-                        .Throttle(new TimeSpan(TimeSpan.TicksPerSecond))
-                        .Subscribe(OnChanged);
+                .Throttle(TimeSpan.FromSeconds(1))
+                .Subscribe(OnChanged);
             _watcher.EnableRaisingEvents = true;
         }
 
