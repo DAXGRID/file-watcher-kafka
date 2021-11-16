@@ -1,7 +1,5 @@
-namespace FileWatcherKafka
+namespace FileWatcherKafka;
+public record WatchSetting
 {
-    public record WatchSetting
-    {
-        public string? Directory { get; init; }
-    }
+    public string? Directory { get; init; }
 }

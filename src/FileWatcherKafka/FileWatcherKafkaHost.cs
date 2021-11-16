@@ -5,59 +5,57 @@ using System.Threading.Tasks;
 using System.IO;
 using System;
 
-namespace FileWatcherKafka
+namespace FileWatcherKafka;
+public class FileWatcherKafkaHost : IHostedService
 {
-    public class FileWatcherKafkaHost : IHostedService
+    private readonly ILogger<FileWatcherKafkaHost> _logger;
+    private readonly IHostApplicationLifetime _hostApplicationLifeTime;
+    private readonly IFileWatcher _fileWatcher;
+
+    public FileWatcherKafkaHost(
+        ILogger<FileWatcherKafkaHost> logger,
+        IHostApplicationLifetime hostApplicationLifetime,
+        IFileWatcher fileWatcher)
     {
-        private readonly ILogger<FileWatcherKafkaHost> _logger;
-        private readonly IHostApplicationLifetime _hostApplicationLifeTime;
-        private readonly IFileWatcher _fileWatcher;
+        _logger = logger;
+        _hostApplicationLifeTime = hostApplicationLifetime;
+        _fileWatcher = fileWatcher;
+    }
 
-        public FileWatcherKafkaHost(
-            ILogger<FileWatcherKafkaHost> logger,
-            IHostApplicationLifetime hostApplicationLifetime,
-            IFileWatcher fileWatcher)
-        {
-            _logger = logger;
-            _hostApplicationLifeTime = hostApplicationLifetime;
-            _fileWatcher = fileWatcher;
-        }
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation($"Starting {nameof(FileWatcherKafkaHost)}.");
+        _hostApplicationLifeTime.ApplicationStarted.Register(OnStarted);
+        _hostApplicationLifeTime.ApplicationStopping.Register(OnStopped);
+        return Task.CompletedTask;
+    }
 
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            _logger.LogInformation($"Starting {nameof(FileWatcherKafkaHost)}.");
-            _hostApplicationLifeTime.ApplicationStarted.Register(OnStarted);
-            _hostApplicationLifeTime.ApplicationStopping.Register(OnStopped);
-            return Task.CompletedTask;
-        }
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
 
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
+    private void MarkAsReady()
+    {
+        File.Create("/tmp/healthy");
+    }
 
-        private void MarkAsReady()
-        {
-            File.Create("/tmp/healthy");
-        }
+    private void OnStarted()
+    {
+        _fileWatcher.Start();
+        MarkAsReady();
+    }
 
-        private void OnStarted()
+    private void OnStopped()
+    {
+        try
         {
-            _fileWatcher.Start();
-            MarkAsReady();
+            _fileWatcher.Dispose();
         }
-
-        private void OnStopped()
+        catch (Exception ex)
         {
-            try
-            {
-                _fileWatcher.Dispose();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Message: {ex.Message}, exception {ex.StackTrace}");
-            }
-            _logger.LogInformation("Stopped");
+            _logger.LogError($"Message: {ex.Message}, exception {ex.StackTrace}");
         }
+        _logger.LogInformation("Stopped");
     }
 }
