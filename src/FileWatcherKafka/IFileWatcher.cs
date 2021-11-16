@@ -1,9 +1,7 @@
 using System;
 
-namespace FileWatcherKafka
+namespace FileWatcherKafka;
+public interface IFileWatcher : IDisposable
 {
-    public interface IFileWatcher : IDisposable
-    {
-        void Start();
-    }
+    void Start();
 }
