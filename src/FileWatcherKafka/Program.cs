@@ -1,9 +1,10 @@
-﻿using System.IO;
-using System.Threading.Tasks;
+﻿using FileWatcherKafka.Config;
 using Microsoft.Extensions.Hosting;
-using FileWatcherKafka.Config;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace FileWatcherKafka;
+
 public class Program
 {
     async static Task Main(string[] args)
