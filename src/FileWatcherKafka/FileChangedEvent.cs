@@ -1,6 +1,7 @@
 using System;
 
 namespace FileWatcherKafka;
+
 public record FileChangedEvent
 {
     public Guid EventId { get; init; }

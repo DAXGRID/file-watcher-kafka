@@ -2,6 +2,7 @@ using System;
 using System.IO;
 
 namespace FileWatcherKafka.Config;
+
 public static class DotEnv
 {
     public static void Load(string filePath)

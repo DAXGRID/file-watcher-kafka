@@ -1,11 +1,12 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
-using System;
 
 namespace FileWatcherKafka;
+
 public class FileWatcherKafkaHost : IHostedService
 {
     private readonly ILogger<FileWatcherKafkaHost> _logger;

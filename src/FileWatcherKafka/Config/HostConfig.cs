@@ -9,6 +9,7 @@ using Serilog.Events;
 using Serilog.Formatting.Compact;
 
 namespace FileWatcherKafka.Config;
+
 public static class HostConfig
 {
     public static IHost Configure()
